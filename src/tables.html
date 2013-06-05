@@ -1,0 +1,92 @@
+<html>
+<head>
+	<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+    <script type='text/javascript' src="http://maps.google.com/maps/api/js?sensor=false&.js"></script>
+    <script type='text/javascript' src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markermanager/1.0/src/markermanager.js"></script>
+  
+	<style type='text/css'>
+        #map {
+			width: 100%;
+			height: 400px;
+		}
+	</style>
+
+	<script type='text/javascript'>//<![CDATA[ 
+		$(function(){
+
+		var infoWindows = [];
+		var openWindows = [];
+
+		function initialize() {
+			map = new google.maps.Map(document.getElementById('map'), {
+				center: new google.maps.LatLng(37.688847, -97.336121),
+				zoom: 11,
+				mapTypeId: 'terrain'
+			});
+
+			var locations = [];
+			
+			$.ajax({
+				url: "data/tabledata.html",
+				dataType: "json"})
+				.done( function(data)
+				{
+					showMap(data);
+				})
+				.fail( function(result, statustext, error)
+				{
+					alert(statustext + ' | ' + error);
+				});
+			
+			function showMap(locations)
+			{
+				// Prepares the marker object, creating a google.maps.Marker object for each
+				// location, place and country
+				if (locations) {
+					for (var i = 0; i < locations.length; i++) {
+						var loc = locations[i];
+
+						var contentString = "<div>Tables</div><ul>";
+						for (var j = 0; j < loc.tables.length; j++) {
+							contentString += "<li>" + loc.tables[j].name + "</li>";
+						}
+						contentString += "</ul>";
+
+						infoWindow = new google.maps.InfoWindow({
+							content: contentString
+						});
+						infoWindows.push(infoWindow);
+
+						marker = new google.maps.Marker({
+							title: loc.name,
+							position: new google.maps.LatLng(
+							loc.latlong[0], loc.latlong[1]),
+							clickable: false,
+							draggable: true,
+							flat: true,
+							map: map
+						});
+
+						google.maps.event.addListener(marker, 'click', (function (marker, i) {
+							return function () {
+								while (infoWindow = openWindows.pop()) {
+									infoWindow.close();
+								}
+
+								infoWindows[i].open(map, this);
+								openWindows.push(infoWindows[i]);
+							}
+						})(marker, i));
+					}
+				}
+			}
+		}
+
+		initialize();
+		});//]]>  
+	</script>
+</head>
+<body>
+	<div id="map"></div>
+</body>
+</html>
